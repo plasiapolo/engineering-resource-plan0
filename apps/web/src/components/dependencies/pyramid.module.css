@@ -1,0 +1,78 @@
+.pyramid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.rowWrap {
+  width: 100%;
+  max-width: 720px;
+}
+
+.rowLabel {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  min-height: 54px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rowOver {
+  background: var(--color-primary-soft-bg);
+  border-color: var(--color-primary);
+}
+
+.rowEmpty {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  align-self: center;
+}
+
+.task {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: grab;
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+}
+
+.task:hover {
+  border-color: var(--color-primary-soft);
+}
+
+.taskDragging {
+  opacity: 0.4;
+}
+
+.taskCode {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.taskHours {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

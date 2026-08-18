@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PROJECT_MANAGER
+  SPECIALIST
+}
+
+enum SkillType {
+  A
+  B
+  C
+  E
+  P
+  S
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  WORK_IN_PROGRESS
+  DONE
+  ON_HOLD
+}
+
+enum ConflictSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ConflictType {
+  PROJECT_DEADLINE
+  PROJECT_BUDGET
+  NO_AVAILABLE_EMPLOYEE
+  DEPENDENCY_VIOLATION
+  EMPLOYEE_OVERLOAD
+  TASK_DEADLINE
+}
+
+model User {
+  id             String           @id @default(cuid())
+  login          String           @unique
+  passwordHash   String
+  displayName    String
+  role           Role
+  skill          SkillType?
+  createdAt      DateTime         @default(now())
+  sessions       Session[]
+  planEntries    PlanEntry[]
+  availabilities Availability[]
+  conflicts      Conflict[]
+  auditLogs      AuditLog[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Project {
+  id          String      @id @default(cuid())
+  code        String
+  name        String
+  deadline    DateTime
+  budgetHours Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+  tasks       Task[]
+  conflicts   Conflict[]
+}
+
+model Task {
+  id                String             @id @default(cuid())
+  projectId         String
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskCode          String
+  requiredSkill     SkillType
+  estimatedHours    Int
+  actualWorkedHours Int                @default(0)
+  status            TaskStatus         @default(NOT_STARTED)
+  taskDeadline      DateTime?
+  rowIndex          Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  planEntries       PlanEntry[]
+  dependenciesFrom  TaskDependency[]   @relation("predecessor")
+  dependenciesTo    TaskDependency[]   @relation("successor")
+  conflicts         Conflict[]
+
+  @@index([projectId])
+}
+
+model TaskDependency {
+  id                String   @id @default(cuid())
+  predecessorTaskId String
+  successorTaskId   String
+  predecessor       Task     @relation("predecessor", fields: [predecessorTaskId], references: [id], onDelete: Cascade)
+  successor         Task     @relation("successor", fields: [successorTaskId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  deletedAt         DateTime?
+
+  @@unique([predecessorTaskId, successorTaskId])
+}
+
+model PlanEntry {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  hours     Int
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([date])
+}
+
+model Availability {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime
+  availableHours Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model Conflict {
+  id          String           @id @default(cuid())
+  type        ConflictType
+  title       String
+  description String
+  severity    ConflictSeverity
+  projectId   String?
+  taskId      String?
+  employeeId  String?
+  project     Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        Task?            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  employee    User?            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  deletedAt   DateTime?
+}
+
+model VersionSnapshot {
+  id              String   @id @default(cuid())
+  snapshotDate    DateTime @unique
+  planEntriesJson Json
+  conflictsJson   Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType String
+  entityId   String?
+  action     String
+  timestamp  DateTime @default(now())
+
+  @@index([entityType])
+  @@index([userId])
+}

@@ -1,0 +1,77 @@
+.editor {
+  padding: 12px;
+}
+
+.editorTitle {
+  font-size: 14px;
+}
+
+.editorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.specialistBlock {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: var(--color-surface-muted);
+}
+
+.tickRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tickRow input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.dayRows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dayRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.removeBtn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.removeBtn:hover {
+  color: var(--color-danger);
+}
+
+.existing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.existingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+}

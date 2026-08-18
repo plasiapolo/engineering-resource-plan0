@@ -1,0 +1,33 @@
+{
+  "name": "engineering-resource-planner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Engineering Resource Planner - production-grade planning platform for engineering teams",
+  "workspaces": [
+    "apps/server",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev -w apps/server\" \"npm run dev -w apps/web\"",
+    "dev:server": "npm run dev -w apps/server",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/server && npm run build -w apps/web",
+    "typecheck": "npm run typecheck -w apps/server && npm run typecheck -w apps/web",
+    "lint": "npm run lint -w apps/server && npm run lint -w apps/web",
+    "test": "npm run test -w apps/server",
+    "test:unit": "npm run test:unit -w apps/server",
+    "test:integration": "npm run test:integration -w apps/server",
+    "test:e2e": "npm run test:e2e -w apps/web",
+    "db:generate": "npm run db:generate -w apps/server",
+    "db:push": "npm run db:push -w apps/server",
+    "db:seed": "npm run db:seed -w apps/server",
+    "db:reset": "npm run db:reset -w apps/server",
+    "start": "npm run start -w apps/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
