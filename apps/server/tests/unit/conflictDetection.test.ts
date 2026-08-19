@@ -15,12 +15,26 @@ function makeInput(overrides: Partial<ConflictInput> = {}): ConflictInput {
   };
 }
 
+function task(id: string, overrides: Record<string, unknown> = {}): any {
+  return {
+    id,
+    projectId: "p1",
+    requiredSkill: "A",
+    estimatedHours: 8,
+    remainingHours: 8,
+    status: "NOT_STARTED",
+    taskDeadline: null,
+    rowIndex: 1,
+    ...overrides,
+  };
+}
+
 describe("detectConflicts", () => {
   it("reports when the project budget is exceeded", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 120, remainingHours: 120, status: "NOT_STARTED", taskDeadline: null }],
+        tasks: [task("t1", { estimatedHours: 120, remainingHours: 120 })],
       }),
     );
     expect(conflicts.some((c) => c.type === "PROJECT_BUDGET" && c.severity === "WARNING")).toBe(true);
@@ -30,7 +44,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 80, remainingHours: 80, status: "NOT_STARTED", taskDeadline: null }],
+        tasks: [task("t1", { estimatedHours: 80, remainingHours: 80 })],
       }),
     );
     expect(conflicts.filter((c) => c.type === "PROJECT_BUDGET")).toHaveLength(0);
@@ -40,7 +54,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null }],
+        tasks: [task("t1")],
       }),
     );
     const c = conflicts.find((x) => x.type === "PROJECT_DEADLINE");
@@ -51,7 +65,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-08-01", budgetHours: 1000 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null }],
+        tasks: [task("t1")],
       }),
     );
     const c = conflicts.find((x) => x.type === "PROJECT_DEADLINE");
@@ -62,7 +76,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-09-04", budgetHours: 1000 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 16, remainingHours: 8, status: "WORK_IN_PROGRESS", taskDeadline: null }],
+        tasks: [task("t1", { estimatedHours: 16, remainingHours: 8, status: "WORK_IN_PROGRESS" })],
         entries: [
           { taskId: "t1", userId: "a1", date: "2026-09-03", hours: 8 },
           { taskId: "t1", userId: "a1", date: "2026-09-02", hours: 8 },
@@ -77,7 +91,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "Z", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null }],
+        tasks: [task("t1", { requiredSkill: "Z" })],
         users: [{ id: "a1", displayName: "A1", skill: "A" }],
       }),
     );
@@ -88,7 +102,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-09-10", budgetHours: 1000 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null }],
+        tasks: [task("t1")],
         users: [{ id: "a1", displayName: "A1", skill: "A" }],
         availability: { a1: { "2026-09-01": 0, "2026-09-02": 0, "2026-09-03": 0, "2026-09-04": 0, "2026-09-07": 0, "2026-09-08": 0, "2026-09-09": 0 } },
       }),
@@ -114,8 +128,8 @@ describe("detectConflicts", () => {
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
         tasks: [
-          { id: "pred", projectId: "p1", requiredSkill: "A", estimatedHours: 16, remainingHours: 8, status: "WORK_IN_PROGRESS", taskDeadline: null },
-          { id: "succ", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null },
+          task("pred", { estimatedHours: 16, remainingHours: 8, status: "WORK_IN_PROGRESS" }),
+          task("succ"),
         ],
         dependencies: [{ predecessorTaskId: "pred", successorTaskId: "succ" }],
         entries: [
@@ -132,10 +146,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [],
-        tasks: [
-          { id: "a", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null },
-          { id: "b", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "NOT_STARTED", taskDeadline: null },
-        ],
+        tasks: [task("a"), task("b")],
         dependencies: [
           { predecessorTaskId: "a", successorTaskId: "b" },
           { predecessorTaskId: "b", successorTaskId: "a" },
@@ -150,7 +161,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "WORK_IN_PROGRESS", taskDeadline: "2026-09-01" }],
+        tasks: [task("t1", { status: "WORK_IN_PROGRESS", taskDeadline: "2026-09-01" })],
         entries: [{ taskId: "t1", userId: "a1", date: "2026-09-02", hours: 4 }],
       }),
     );
@@ -161,7 +172,7 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 8, remainingHours: 8, status: "ON_HOLD", taskDeadline: null }],
+        tasks: [task("t1", { status: "ON_HOLD" })],
       }),
     );
     expect(conflicts.some((c) => c.type === "TASK_DEADLINE" && c.title === "On-hold task deadline risk")).toBe(true);
@@ -171,9 +182,76 @@ describe("detectConflicts", () => {
     const conflicts = detectConflicts(
       makeInput({
         projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 100 }],
-        tasks: [{ id: "t1", projectId: "p1", requiredSkill: "A", estimatedHours: 80, remainingHours: 0, status: "DONE", taskDeadline: null }],
+        tasks: [task("t1", { estimatedHours: 80, remainingHours: 0, status: "DONE" })],
       }),
     );
     expect(conflicts).toHaveLength(0);
+  });
+
+  it("reports row order violation when an upper row starts before a lower row ends", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
+        tasks: [
+          task("lower", { rowIndex: 1, estimatedHours: 16, remainingHours: 8, status: "WORK_IN_PROGRESS" }),
+          task("upper", { rowIndex: 2 }),
+        ],
+        entries: [
+          { taskId: "lower", userId: "a1", date: "2026-09-02", hours: 8 },
+          { taskId: "upper", userId: "a1", date: "2026-09-02", hours: 4 },
+        ],
+      }),
+    );
+    const c = conflicts.find((x) => x.type === "ROW_ORDER");
+    expect(c?.taskId).toBe("upper");
+  });
+
+  it("does not report row order violation when the upper row starts after all lower rows end", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
+        tasks: [
+          task("lower", { rowIndex: 1, status: "DONE", remainingHours: 0 }),
+          task("upper", { rowIndex: 2 }),
+        ],
+        entries: [
+          { taskId: "lower", userId: "a1", date: "2026-09-02", hours: 8 },
+          { taskId: "upper", userId: "a1", date: "2026-09-03", hours: 4 },
+        ],
+      }),
+    );
+    expect(conflicts.filter((c) => c.type === "ROW_ORDER")).toHaveLength(0);
+  });
+
+  it("reports row order violation when a lower row is not fully scheduled", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
+        tasks: [
+          task("lower", { rowIndex: 1, estimatedHours: 16, remainingHours: 16 }),
+          task("upper", { rowIndex: 2 }),
+        ],
+        entries: [
+          { taskId: "lower", userId: "a1", date: "2026-09-02", hours: 8 },
+          { taskId: "upper", userId: "a1", date: "2026-09-03", hours: 4 },
+        ],
+      }),
+    );
+    const c = conflicts.find((x) => x.type === "ROW_ORDER");
+    expect(c?.taskId).toBe("upper");
+  });
+
+  it("does not report row order violation for tasks in the same row", () => {
+    const conflicts = detectConflicts(
+      makeInput({
+        projects: [{ id: "p1", name: "Z1", deadline: "2026-12-31", budgetHours: 1000 }],
+        tasks: [task("t1", { rowIndex: 1 }), task("t2", { rowIndex: 1 })],
+        entries: [
+          { taskId: "t1", userId: "a1", date: "2026-09-02", hours: 8 },
+          { taskId: "t2", userId: "a1", date: "2026-09-02", hours: 4 },
+        ],
+      }),
+    );
+    expect(conflicts.filter((c) => c.type === "ROW_ORDER")).toHaveLength(0);
   });
 });

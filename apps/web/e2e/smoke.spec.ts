@@ -35,7 +35,9 @@ test("PM can edit an existing task", async ({ page }) => {
   await hoursInput.fill("41");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByText("Edit task")).toHaveCount(0);
-  await expect(page.getByText(/41h \//)).toBeVisible();
+  await expect(page.getByText("Hours planned")).toBeVisible();
+  await expect(page.getByText("Hours available")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "41h" }).first()).toBeVisible();
 });
 
 test("generating the automatic plan shows the conflict banner", async ({ page }) => {

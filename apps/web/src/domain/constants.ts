@@ -48,6 +48,7 @@ export const CONFLICT_TYPE_LABELS: Record<string, string> = {
   DEPENDENCY_VIOLATION: "Dependency violation",
   EMPLOYEE_OVERLOAD: "Employee overload",
   TASK_DEADLINE: "Task deadline",
+  ROW_ORDER: "Pyramid row order",
 };
 
 export const ALLOWED_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {

@@ -374,6 +374,71 @@ describe("Assignments and plan entries", () => {
     const updatedTask = tasksAfter.find((t: { id: string }) => t.id === taskRes.json().id);
     expect(updatedTask.taskCode).toMatch(/^P4-A2-1\.\d{6}$/);
   });
+
+  it("removes an assigned specialist and reverts the task code", async () => {
+    const pm = await pmSession();
+    const projectRes = await app.inject({
+      method: "POST",
+      url: "/api/projects",
+      headers: headers(pm),
+      payload: { name: "Plant", deadline: futureWorkingDay(30), budgetHours: 500 },
+    });
+    const taskRes = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      headers: headers(pm),
+      payload: { projectId: projectRes.json().id, requiredSkill: "A", estimatedHours: 8 },
+    });
+    const taskId = taskRes.json().id;
+    const a1 = await userIdByLogin("a1");
+    const a2 = await userIdByLogin("a2");
+
+    await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/assignments`,
+      headers: headers(pm),
+      payload: {
+        assignments: [
+          { userId: a1, date: futureWorkingDay(), hours: 4 },
+          { userId: a2, date: futureWorkingDay(1), hours: 4 },
+        ],
+      },
+    });
+
+    const assigned = (await app.inject({ method: "GET", url: "/api/tasks", headers: headers(pm) })).json().find(
+      (t: { id: string }) => t.id === taskId,
+    );
+    expect(assigned.taskCode).toMatch(/^P4-A1-1\.\d{6}$/);
+    expect(assigned.assignedUserIds.sort()).toEqual([a1, a2].sort());
+
+    const remove = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/assignments/remove`,
+      headers: headers(pm),
+      payload: { userId: a1 },
+    });
+    expect(remove.statusCode).toBe(200);
+
+    const afterRemove = (await app.inject({ method: "GET", url: "/api/tasks", headers: headers(pm) })).json().find(
+      (t: { id: string }) => t.id === taskId,
+    );
+    expect(afterRemove.taskCode).toMatch(/^P4-A2-1\.\d{6}$/);
+    expect(afterRemove.assignedUserIds).toEqual([a2]);
+
+    const removeLast = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/assignments/remove`,
+      headers: headers(pm),
+      payload: { userId: a2 },
+    });
+    expect(removeLast.statusCode).toBe(200);
+
+    const afterAllRemoved = (await app.inject({ method: "GET", url: "/api/tasks", headers: headers(pm) })).json().find(
+      (t: { id: string }) => t.id === taskId,
+    );
+    expect(afterAllRemoved.taskCode).toMatch(/^P4-AX-1\.\d{6}$/);
+    expect(afterAllRemoved.assignedUserIds).toEqual([]);
+  });
 });
 
 describe("Automatic plan generation", () => {
@@ -594,6 +659,18 @@ describe("Versions", () => {
 });
 
 describe("Admin", () => {
+  it("reset to seed keeps the requesting project manager logged in", async () => {
+    const pm = await pmSession();
+    const res = await app.inject({ method: "POST", url: "/api/admin/reset", headers: headers(pm) });
+    expect(res.statusCode).toBe(200);
+    const setCookie = String(res.headers["set-cookie"] ?? "");
+    const token = setCookie.match(/erp_session=([^;]+)/)?.[1] ?? "";
+    expect(token).not.toBe("");
+    const me = await app.inject({ method: "GET", url: "/api/auth/me", headers: { cookie: `erp_session=${token}` } });
+    expect(me.statusCode).toBe(200);
+    expect(me.json().user.login).toBe("pm");
+  });
+
   it("resets the database to seed and wipes projects", async () => {
     const pm = await pmSession();
     await app.inject({

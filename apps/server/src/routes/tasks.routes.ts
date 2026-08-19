@@ -36,6 +36,10 @@ const assignmentSchema = z.object({
     .max(200),
 });
 
+const removeAssignmentSchema = z.object({
+  userId: z.string().min(1),
+});
+
 export function registerTaskRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.get("/tasks", async (request) => {
     request.requireUser();
@@ -112,6 +116,21 @@ export function registerTaskRoutes(app: FastifyInstance, ctx: AppContext): void 
       return reply.code(201).send(entries);
     } catch (err) {
       return reply.code(400).send({ error: err instanceof Error ? err.message : "Invalid assignment" });
+    }
+  });
+
+  app.post("/tasks/:id/assignments/remove", async (request, reply) => {
+    const pm = request.requirePM();
+    const { id } = request.params as { id: string };
+    const parsed = removeAssignmentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+    }
+    try {
+      await ctx.storage.removeAssignment(id, parsed.data.userId, pm.id);
+      return reply.send({ ok: true });
+    } catch (err) {
+      return reply.code(400).send({ error: err instanceof Error ? err.message : "Invalid request" });
     }
   });
 }

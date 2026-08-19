@@ -32,6 +32,7 @@ export interface AppStateContextValue {
   deleteTask: (id: string) => Promise<void>;
   updateTaskStatus: (id: string, status: TaskStatus, actualWorkedHours?: number) => Promise<void>;
   assignTask: (taskId: string, assignments: Array<{ userId: string; date: DateString; hours: number }>) => Promise<void>;
+  removeAssignment: (taskId: string, userId: string) => Promise<void>;
   updatePlanEntry: (id: string, input: { userId?: string; date?: DateString; hours?: number }) => Promise<void>;
   setPlanEntryLock: (id: string, locked: boolean) => Promise<void>;
   deletePlanEntry: (id: string) => Promise<void>;
@@ -136,6 +137,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       deleteTask: (id) => run(() => api.deleteTask(id)),
       updateTaskStatus: (id, status, actualWorkedHours) => run(() => api.updateTaskStatus(id, status, actualWorkedHours)),
       assignTask: (taskId, assignments) => run(() => api.assignTask(taskId, assignments)),
+      removeAssignment: (taskId, userId) => run(() => api.removeAssignment(taskId, userId)),
       updatePlanEntry: (id, input) => run(() => api.updatePlanEntry(id, input)),
       setPlanEntryLock: (id, locked) => run(() => api.setPlanEntryLock(id, locked)),
       deletePlanEntry: (id) => run(() => api.deletePlanEntry(id)),

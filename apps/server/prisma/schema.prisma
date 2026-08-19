@@ -42,6 +42,7 @@ enum ConflictType {
   DEPENDENCY_VIOLATION
   EMPLOYEE_OVERLOAD
   TASK_DEADLINE
+  ROW_ORDER
 }
 
 model User {

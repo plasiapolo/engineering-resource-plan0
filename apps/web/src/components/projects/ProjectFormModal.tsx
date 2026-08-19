@@ -5,7 +5,7 @@ import { Input, Field } from "../ui/Input";
 import { Alert } from "../ui/Alert";
 import { Modal } from "../ui/Modal";
 import { useAppState } from "../../store/AppStateContext";
-import { addDays } from "../../utils/date";
+import { addDays, formatDDMMYYYY, parseDDMMYYYY, toDateString } from "../../utils/date";
 
 export function ProjectFormModal({
   open,
@@ -18,24 +18,31 @@ export function ProjectFormModal({
 }) {
   const { createProject, updateProject } = useAppState();
   const [name, setName] = useState(project?.name ?? "");
-  const [deadline, setDeadline] = useState<DateString>(project?.deadline ?? addDays(new Date(), 90).toISOString().slice(0, 10));
+  const [deadline, setDeadline] = useState(
+    project?.deadline ? formatDDMMYYYY(project.deadline) : formatDDMMYYYY(toDateString(addDays(new Date(), 90))),
+  );
   const [budgetHours, setBudgetHours] = useState(String(project?.budgetHours ?? 200));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = parseDDMMYYYY(deadline);
+    if (!parsed) {
+      setError("Deadline must be in dd/mm/yyyy format.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       if (project) {
         await updateProject(project.id, {
           name,
-          deadline,
+          deadline: parsed,
           budgetHours: Number(budgetHours),
         });
       } else {
-        await createProject({ name, deadline, budgetHours: Number(budgetHours) });
+        await createProject({ name, deadline: parsed, budgetHours: Number(budgetHours) });
       }
       onClose();
     } catch (err) {
@@ -53,8 +60,8 @@ export function ProjectFormModal({
         </Field>
         <div className="form-row">
           <div className="flex-1">
-            <Field label="Deadline">
-              <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
+            <Field label="Deadline (dd/mm/yyyy)">
+              <Input value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="dd/mm/yyyy" required />
             </Field>
           </div>
           <div className="flex-1">

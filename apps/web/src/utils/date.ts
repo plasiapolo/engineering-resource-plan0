@@ -51,6 +51,23 @@ export function formatDateShort(s: DateString): string {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" });
 }
 
+export function formatDDMMYYYY(s: DateString): string {
+  const [y, m, d] = s.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export function parseDDMMYYYY(s: string): DateString | null {
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("en-GB", { timeZone: "Europe/Warsaw" });
 }
@@ -100,6 +117,7 @@ export function isPolishHoliday(date: Date): boolean {
     `${y}-08-15`,
     `${y}-11-01`,
     `${y}-11-11`,
+    `${y}-12-24`,
     `${y}-12-25`,
     `${y}-12-26`,
   ];

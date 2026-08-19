@@ -28,6 +28,7 @@ describe("polishCalendar", () => {
     expect(isPolishHoliday("2026-08-15")).toBe(true);
     expect(isPolishHoliday("2026-11-01")).toBe(true);
     expect(isPolishHoliday("2026-11-11")).toBe(true);
+    expect(isPolishHoliday("2026-12-24")).toBe(true);
     expect(isPolishHoliday("2026-12-25")).toBe(true);
     expect(isPolishHoliday("2026-12-26")).toBe(true);
   });

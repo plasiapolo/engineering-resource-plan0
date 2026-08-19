@@ -12,7 +12,8 @@ export type ConflictType =
   | "NO_AVAILABLE_EMPLOYEE"
   | "DEPENDENCY_VIOLATION"
   | "EMPLOYEE_OVERLOAD"
-  | "TASK_DEADLINE";
+  | "TASK_DEADLINE"
+  | "ROW_ORDER";
 
 export type DateString = string;
 

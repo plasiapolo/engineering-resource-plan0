@@ -160,8 +160,8 @@ export function WeeklyCalendar({ isPM }: { isPM: boolean }) {
                 const isToday = toDateString(day) === today;
                 return (
                   <div key={toDateString(day)} className={`${styles.dayHeader} ${isToday ? styles.dayHeaderToday : ""}`}>
-                    <div>{day.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit" })}</div>
-                    {!working ? <div className={styles.nonWorking}>holiday / weekend</div> : null}
+                    <div>{day.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short" })}</div>
+                    {!working ? <div className={styles.nonWorking}>non-working</div> : null}
                   </div>
                 );
               })}

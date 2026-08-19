@@ -6,7 +6,8 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { ConfirmDialog, EmptyState } from "../components/ui/Extras";
 import { ProjectFormModal } from "../components/projects/ProjectFormModal";
-import { formatDateShort } from "../utils/date";
+import { formatDDMMYYYY } from "../utils/date";
+import { scheduledHoursByProject } from "../utils/plan";
 import styles from "./pages.module.css";
 
 export function ProjectsPage() {
@@ -16,6 +17,8 @@ export function ProjectsPage() {
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
 
   if (!data) return null;
+
+  const plannedByProject = scheduledHoursByProject(data.tasks, data.planEntries);
 
   return (
     <div>
@@ -43,8 +46,17 @@ export function ProjectsPage() {
           columns={[
             { key: "code", header: "Code", render: (p) => <span className={styles.taskCode}>{p.code}</span> },
             { key: "name", header: "Name", render: (p) => <strong>{p.name}</strong> },
-            { key: "deadline", header: "Deadline", render: (p) => formatDateShort(p.deadline) },
-            { key: "budget", header: "Budget", render: (p) => `${p.totalEstimatedHours}h / ${p.budgetHours}h` },
+            { key: "deadline", header: "Deadline", render: (p) => formatDDMMYYYY(p.deadline) },
+            {
+              key: "budgetPlanned",
+              header: "Budget planned",
+              render: (p) => `${plannedByProject.get(p.id) ?? 0}h`,
+            },
+            {
+              key: "budgetAvailable",
+              header: "Budget available",
+              render: (p) => `${Math.max(0, p.budgetHours - (plannedByProject.get(p.id) ?? 0))}h`,
+            },
             {
               key: "tasks",
               header: "Tasks",

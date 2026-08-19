@@ -92,6 +92,12 @@ export const api = {
       body: JSON.stringify({ assignments }),
     }),
 
+  removeAssignment: (taskId: string, userId: string) =>
+    request<{ ok: boolean }>(`/tasks/${taskId}/assignments/remove`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    }),
+
   updatePlanEntry: (id: string, input: { userId?: string; date?: DateString; hours?: number }) =>
     request<ApiPlanEntry>(`/plan-entries/${id}`, { method: "PUT", body: JSON.stringify(input) }),
 

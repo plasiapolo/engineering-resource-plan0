@@ -17,6 +17,7 @@ export interface ConflictTask {
   remainingHours: number;
   status: TaskStatus;
   taskDeadline: DateString | null;
+  rowIndex: number;
 }
 
 export interface ConflictProject {
@@ -260,6 +261,46 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
           employeeId: user.id,
         });
       }
+    }
+  }
+
+  // 5b. Pyramid row order: a task in row N may only be planned to dates after
+  // all tasks in lower rows of the same project have been scheduled.
+  for (const task of tasks) {
+    const upperMin = minEntryDate(task.id);
+    if (!upperMin) continue;
+    const lowerTasks = tasks.filter(
+      (t) => t.projectId === task.projectId && t.rowIndex < task.rowIndex && !taskIsComplete(t),
+    );
+    if (lowerTasks.length === 0) continue;
+    const lowerMaxDates = lowerTasks
+      .map((t) => maxEntryDate(t.id))
+      .filter((d): d is DateString => d !== null)
+      .sort();
+    const lowerMax = lowerMaxDates.length ? lowerMaxDates[lowerMaxDates.length - 1] : null;
+    if (lowerMax && compareDates(upperMin, lowerMax) <= 0) {
+      conflicts.push({
+        type: "ROW_ORDER",
+        title: "Pyramid row order violated",
+        description: `Task ${task.id} (row ${task.rowIndex}) is planned to start on ${upperMin}, before lower pyramid rows are finished (last lower-row work on ${lowerMax}).`,
+        severity: "ERROR",
+        projectId: task.projectId,
+        taskId: task.id,
+        employeeId: null,
+      });
+      continue;
+    }
+    const notFullyScheduled = lowerTasks.some((t) => t.remainingHours > taskScheduledHours(t.id));
+    if (notFullyScheduled) {
+      conflicts.push({
+        type: "ROW_ORDER",
+        title: "Pyramid row order violated",
+        description: `Task ${task.id} (row ${task.rowIndex}) is scheduled to start after lower pyramid rows end, but some lower-row tasks are not fully scheduled.`,
+        severity: "ERROR",
+        projectId: task.projectId,
+        taskId: task.id,
+        employeeId: null,
+      });
     }
   }
 

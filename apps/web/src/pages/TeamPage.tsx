@@ -8,7 +8,9 @@ export function TeamPage() {
   const { data } = useAppState();
   if (!data) return null;
 
-  const members = data.team;
+  const members = [...data.team].sort((a, b) =>
+    a.role === "PROJECT_MANAGER" ? -1 : b.role === "PROJECT_MANAGER" ? 1 : 0,
+  );
 
   return (
     <div>

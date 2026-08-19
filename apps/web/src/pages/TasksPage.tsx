@@ -9,15 +9,28 @@ import { EmptyState, ConfirmDialog } from "../components/ui/Extras";
 import { TaskFormModal } from "../components/tasks/TaskFormModal";
 import { AssignmentEditor } from "../components/tasks/AssignmentEditor";
 import { TASK_STATUS_LABELS } from "../domain/constants";
+import type { ApiTask } from "../domain/types";
 import styles from "./pages.module.css";
 
+function taskCodesOf(task: ApiTask): string[] {
+  const parts = task.codePart.split("-");
+  if (parts.length < 3) return [task.codePart];
+  if (task.assignedUsers.length === 0) return [task.codePart];
+  return task.assignedUsers.map((u) => {
+    const p = [...parts];
+    p[1] = u.login.toUpperCase();
+    return p.join("-");
+  });
+}
+
 export function TasksPage() {
-  const { data, deleteTask } = useAppState();
+  const { data, deleteTask, removeAssignment } = useAppState();
   const [projectFilter, setProjectFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<null | { id: string; estimatedHours: number; taskDeadline: string | null; requiredSkill: "A" | "B" | "C" | "E" | "P" | "S"; projectId: string }>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; code: string } | null>(null);
+  const [removing, setRemoving] = useState<Record<string, boolean>>({});
 
   if (!data) return null;
 
@@ -25,6 +38,18 @@ export function TasksPage() {
 
   const statusTone = (status: string) =>
     status === "DONE" ? "green" : status === "ON_HOLD" ? "orange" : status === "WORK_IN_PROGRESS" ? "blue" : "neutral";
+
+  const handleRemoveAssignment = async (taskId: string, userId: string) => {
+    const key = `${taskId}:${userId}`;
+    setRemoving((prev) => ({ ...prev, [key]: true }));
+    try {
+      await removeAssignment(taskId, userId);
+    } catch {
+      // state refresh failure is surfaced by the app; keep going
+    } finally {
+      setRemoving((prev) => ({ ...prev, [key]: false }));
+    }
+  };
 
   return (
     <div>
@@ -61,7 +86,19 @@ export function TasksPage() {
           rowKey={(t) => t.id}
           empty={<EmptyState title="No tasks" hint="Add tasks and assign specialists with matching skills." />}
           columns={[
-            { key: "code", header: "Task code", render: (t) => <span className={styles.taskCode}>{t.codePart}</span> },
+            { key: "code", header: "Task code", render: (t) => {
+              const codes = taskCodesOf(t);
+              return (
+                <span className={styles.taskCode}>
+                  {codes.map((c, i) => (
+                    <span key={i}>
+                      {c}
+                      {i < codes.length - 1 ? <br /> : null}
+                    </span>
+                  ))}
+                </span>
+              );
+            } },
             { key: "project", header: "Project", render: (t) => `${t.projectCode}` },
             {
               key: "skill",
@@ -69,9 +106,14 @@ export function TasksPage() {
               render: (t) => <Badge tone="blue">{t.requiredSkill}</Badge>,
             },
             {
-              key: "hours",
-              header: "Hours",
-              render: (t) => `${t.remainingHours}h / ${t.estimatedHours}h`,
+              key: "hoursPlanned",
+              header: "Hours planned",
+              render: (t) => `${t.scheduledHours}h`,
+            },
+            {
+              key: "hoursAvailable",
+              header: "Hours available",
+              render: (t) => `${t.estimatedHours}h`,
             },
             {
               key: "assigned",
@@ -80,9 +122,27 @@ export function TasksPage() {
                 t.assignedUsers.length > 0 ? (
                   <div className="flex wrap">
                     {t.assignedUsers.map((u) => (
-                      <Badge key={u.id} tone="neutral">
-                        {u.login}
-                      </Badge>
+                      <span key={u.id} className="flex" style={{ alignItems: "center", gap: 2 }}>
+                        <Badge tone="neutral">{u.login}</Badge>
+                        <button
+                          type="button"
+                          className="text-danger"
+                          disabled={removing[`${t.id}:${u.id}`]}
+                          onClick={() => void handleRemoveAssignment(t.id, u.id)}
+                          title={`Remove ${u.login}`}
+                          aria-label={`Remove ${u.login}`}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: 14,
+                            lineHeight: 1,
+                            padding: "2px 4px",
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
                     ))}
                   </div>
                 ) : (

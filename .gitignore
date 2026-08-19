@@ -1,16 +1,46 @@
-node_modules
-dist
-build
-coverage
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Tests / coverage
+coverage/
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/blob-report/
+
+# Logs
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment / secrets
 .env
-.env.local
-.env.production
-.env.test
-apps/server/prisma/migrations/dev
-apps/web/playwright-report
-apps/web/test-results
+.env.*
+!.env.example
+!.env.production.example
+*.local
+
+# Prisma
+apps/server/prisma/migrations/dev/
+
+# Certificates
+certs/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-.vscode
-.idea
-certs
+Thumbs.db

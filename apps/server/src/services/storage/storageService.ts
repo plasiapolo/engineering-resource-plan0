@@ -489,6 +489,23 @@ export class StorageService {
     return this.loadEntriesForTask(taskId);
   }
 
+  async removeAssignment(taskId: string, userId: string, actorId: string): Promise<void> {
+    const entries = await this.db.planEntry.findMany({
+      where: { taskId, userId, deletedAt: null },
+    });
+    if (entries.length === 0) {
+      throw new Error("No assignment found for this specialist on the task.");
+    }
+    await this.db.planEntry.updateMany({
+      where: { id: { in: entries.map((e) => e.id) } },
+      data: { deletedAt: new Date() },
+    });
+    await this.updateTaskCodeForAssignment(taskId);
+    await this.recomputeConflicts();
+    await this.captureVersion();
+    await this.audit(actorId, "TASK", taskId, "ASSIGNMENT_REMOVED");
+  }
+
   async updatePlanEntry(
     entryId: string,
     input: { userId?: string; date?: DateString; hours?: number },
@@ -773,6 +790,7 @@ export class StorageService {
         remainingHours: Math.max(0, t.estimatedHours - t.actualWorkedHours),
         status: t.status,
         taskDeadline: t.taskDeadline ? toDateString(t.taskDeadline) : null,
+        rowIndex: t.rowIndex,
       })),
       dependencies: deps.map((d) => ({
         predecessorTaskId: d.predecessorTaskId,

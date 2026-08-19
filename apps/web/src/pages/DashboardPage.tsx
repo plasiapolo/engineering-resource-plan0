@@ -5,7 +5,8 @@ import { StatCard } from "../components/ui/Extras";
 import { Table } from "../components/ui/Table";
 import { Button } from "../components/ui/Button";
 import { CONFLICT_SEVERITY_LABELS, CONFLICT_TYPE_LABELS } from "../domain/constants";
-import { formatDateShort } from "../utils/date";
+import { formatDDMMYYYY } from "../utils/date";
+import { scheduledHoursByProject } from "../utils/plan";
 import styles from "./pages.module.css";
 
 export function DashboardPage() {
@@ -26,6 +27,7 @@ export function DashboardPage() {
   const activeConflicts = data.conflicts.filter((c) => c.severity === "ERROR" || c.severity === "CRITICAL").length;
   const plannedHours = data.planEntries.reduce((sum, e) => sum + e.hours, 0);
   const teamLoad = data.team.filter((m) => m.role === "SPECIALIST");
+  const plannedByProject = scheduledHoursByProject(data.tasks, data.planEntries);
 
   const criticalConflicts = data.conflicts.slice(0, 6);
 
@@ -65,7 +67,7 @@ export function DashboardPage() {
               columns={[
                 { key: "code", header: "Code", render: (p) => <span className={styles.taskCode}>{p.code}</span> },
                 { key: "name", header: "Name", render: (p) => p.name },
-                { key: "deadline", header: "Deadline", render: (p) => formatDateShort(p.deadline) },
+                { key: "deadline", header: "Deadline", render: (p) => formatDDMMYYYY(p.deadline) },
                 {
                   key: "tasks",
                   header: "Tasks",
@@ -76,9 +78,14 @@ export function DashboardPage() {
                   ),
                 },
                 {
-                  key: "budget",
-                  header: "Budget",
-                  render: (p) => `${p.totalEstimatedHours}h / ${p.budgetHours}h`,
+                  key: "budgetPlanned",
+                  header: "Budget planned",
+                  render: (p) => `${plannedByProject.get(p.id) ?? 0}h`,
+                },
+                {
+                  key: "budgetAvailable",
+                  header: "Budget available",
+                  render: (p) => `${Math.max(0, p.budgetHours - (plannedByProject.get(p.id) ?? 0))}h`,
                 },
               ]}
             />

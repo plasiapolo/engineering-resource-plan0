@@ -78,6 +78,7 @@ export function polishHolidaysForYear(year: number): DateString[] {
     `${year}-08-15`,
     `${year}-11-01`,
     `${year}-11-11`,
+    `${year}-12-24`,
     `${year}-12-25`,
     `${year}-12-26`,
   ];

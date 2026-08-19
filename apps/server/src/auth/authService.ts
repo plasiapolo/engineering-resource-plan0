@@ -27,13 +27,18 @@ export class AuthService {
     if (!user) return null;
     const ok = await this.verifyPassword(user.passwordHash, password);
     if (!ok) return null;
+    const token = await this.createSessionForUser(user.id);
+    return { user, token };
+  }
+
+  async createSessionForUser(userId: string): Promise<string> {
     const token = crypto.randomBytes(32).toString("base64url");
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const expiresAt = new Date(Date.now() + this.sessionTtlHours * 60 * 60 * 1000);
     await this.db.session.create({
-      data: { userId: user.id, tokenHash, expiresAt },
+      data: { userId, tokenHash, expiresAt },
     });
-    return { user, token };
+    return token;
   }
 
   async getUserByToken(token: string | undefined): Promise<User | null> {
