@@ -6,8 +6,7 @@ services:
     region: frankfurt
     rootDir: .
     buildCommand: npm ci && npm run build
-    startCommand: npm start
-    preDeployCommand: npx prisma migrate deploy --schema apps/server/prisma/schema.prisma
+    startCommand: npx prisma migrate deploy --schema apps/server/prisma/schema.prisma && npm start
     healthCheckPath: /health
     autoDeploy: true
     envVars:
