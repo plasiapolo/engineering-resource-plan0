@@ -820,6 +820,7 @@ export class StorageService {
       tasks: tasks.map((t) => ({
         id: t.id,
         projectId: t.projectId,
+        codePart: codePartOf(t.taskCode),
         requiredSkill: t.requiredSkill,
         estimatedHours: t.estimatedHours,
         remainingHours: Math.max(0, t.estimatedHours - t.actualWorkedHours),

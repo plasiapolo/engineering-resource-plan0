@@ -19,6 +19,7 @@ function task(id: string, overrides: Record<string, unknown> = {}): any {
   return {
     id,
     projectId: "p1",
+    codePart: `${id.toUpperCase()}-1`,
     requiredSkill: "A",
     estimatedHours: 8,
     remainingHours: 8,

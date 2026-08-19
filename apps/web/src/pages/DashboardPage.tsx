@@ -136,7 +136,7 @@ export function DashboardPage() {
                 { key: "name", header: "Specialist", render: (m) => m.displayName },
                 { key: "skill", header: "Skill", render: (m) => <Badge tone="blue">{m.skill ?? "—"}</Badge> },
                 { key: "planned", header: "Planned", render: (m) => `${m.plannedHours}h` },
-                { key: "avail", header: "Availability", render: (m) => `${m.availableHours}h / day` },
+                { key: "avail3mo", header: "Available hours within 3 months", render: (m) => `${m.availableHoursNext3Months}h` },
               ]}
             />
           </div>

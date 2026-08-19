@@ -33,6 +33,73 @@ export function VersionsPage() {
 
   const severityTone = (s: string) => (s === "CRITICAL" || s === "ERROR" ? "red" : s === "WARNING" ? "orange" : "blue");
 
+  const escapeHtml = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+  const printSnapshot = (detail: ApiVersionDetail) => {
+    const win = window.open("", "_blank", "width=960,height=720");
+    if (!win) return;
+    const entriesRows = detail.planEntries
+      .map(
+        (e) =>
+          `<tr><td>${escapeHtml(e.date)}</td><td class="mono">${escapeHtml(e.taskCode.split(".")[0])}</td><td>${escapeHtml(
+            e.userName,
+          )}</td><td>${e.hours}h</td><td>${e.locked ? "manual" : "auto"}</td></tr>`,
+      )
+      .join("");
+    const conflictCards = detail.conflicts
+      .map(
+        (c) =>
+          `<div class="conflict"><span class="sev sev-${c.severity.toLowerCase()}">${escapeHtml(
+            CONFLICT_SEVERITY_LABELS[c.severity],
+          )}</span><strong>${escapeHtml(CONFLICT_TYPE_LABELS[c.type] ?? c.type)}</strong> — ${escapeHtml(
+            c.title,
+          )}<div class="desc">${escapeHtml(c.description)}</div></div>`,
+      )
+      .join("");
+    win.document.write(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Plan snapshot ${escapeHtml(detail.snapshotDate)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; color: #1f2933; margin: 0; }
+  @page { margin: 14mm; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 20px 0 8px; border-bottom: 1px solid #d1d5db; padding-bottom: 4px; }
+  .sub { color: #6b7280; margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #d1d5db; padding: 5px 8px; text-align: left; }
+  th { background: #f3f4f6; font-weight: 600; }
+  td.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .conflict { border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; page-break-inside: avoid; }
+  .sev { display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
+  .sev-critical, .sev-error { background: #fee2e2; color: #991b1b; }
+  .sev-warning { background: #ffedd5; color: #9a3412; }
+  .sev-info { background: #dbeafe; color: #1e40af; }
+  .desc { color: #6b7280; margin-top: 4px; }
+  .foot { color: #9ca3af; font-size: 10px; margin-top: 24px; }
+  tr { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+  <h1>Plan snapshot ${escapeHtml(detail.snapshotDate)}</h1>
+  <p class="sub">${detail.planEntries.length} entries &middot; ${detail.conflicts.length} conflicts</p>
+  <h2>Plan entries</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Task code</th><th>Specialist</th><th>Hours</th><th>Lock</th></tr></thead>
+    <tbody>${entriesRows || '<tr><td colspan="5">No entries in this snapshot.</td></tr>'}</tbody>
+  </table>
+  <h2>Conflicts</h2>
+  ${conflictCards || '<p class="sub">No conflicts in this snapshot.</p>'}
+  <p class="foot">Generated ${new Date().toLocaleString("en-GB")} &middot; Engineering Resource Planner</p>
+  <script>window.onload = function () { window.print(); };</script>
+</body>
+</html>`);
+    win.document.close();
+  };
+
   return (
     <div>
       <p className="page-subtitle">
@@ -67,11 +134,16 @@ export function VersionsPage() {
         {loadingVersion ? (
           <Spinner label="Loading snapshot…" />
         ) : selected ? (
-          <div>
-            <p className="muted">
-              Snapshot for <strong>{selected.snapshotDate}</strong> · {selected.planEntries.length} entries ·{" "}
-              {selected.conflicts.length} conflicts
-            </p>
+          <div className="print-area">
+            <div className="flex-between mb-16">
+              <p className="muted">
+                Snapshot for <strong>{selected.snapshotDate}</strong> · {selected.planEntries.length} entries ·{" "}
+                {selected.conflicts.length} conflicts
+              </p>
+              <Button variant="secondary" size="sm" className="no-print" onClick={() => printSnapshot(selected)}>
+                Print to PDF
+              </Button>
+            </div>
             <div className="grid-2">
               <div>
                 <h4 className="mb-16">Plan entries</h4>

@@ -12,6 +12,7 @@ import {
 export interface ConflictTask {
   id: string;
   projectId: string;
+  codePart: string;
   requiredSkill: string;
   estimatedHours: number;
   remainingHours: number;
@@ -80,6 +81,8 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
 
   const taskEntryDates = (taskId: string): DateString[] =>
     (entriesByTask.get(taskId) ?? []).map((e) => e.date).sort();
+
+  const codeOf = (taskId: string): string => taskById.get(taskId)?.codePart ?? taskId;
 
   const maxEntryDate = (taskId: string): DateString | null => {
     const dates = taskEntryDates(taskId);
@@ -196,7 +199,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
   // 4. Dependency violations
   const cycle = findCycle(dependencies);
   if (cycle.length > 0) {
-    const labels = cycle.map((id) => taskById.get(id)?.id ?? id).join(" -> ");
+    const labels = cycle.map((id) => codeOf(id)).join(" -> ");
     conflicts.push({
       type: "DEPENDENCY_VIOLATION",
       title: "Cyclic task dependency detected",
@@ -221,7 +224,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
       conflicts.push({
         type: "DEPENDENCY_VIOLATION",
         title: "Unsatisfied task dependency",
-        description: `Task ${succ.id} is scheduled to start (${succMin}) before its predecessor ${pred.id} is finished (${predMax}).`,
+        description: `Task ${codeOf(succ.id)} is scheduled to start (${succMin}) before its predecessor ${codeOf(pred.id)} is finished (${predMax}).`,
         severity: "ERROR",
         projectId: succ.projectId,
         taskId: succ.id,
@@ -234,7 +237,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
         conflicts.push({
           type: "DEPENDENCY_VIOLATION",
           title: "Unsatisfied task dependency",
-          description: `Task ${succ.id} starts after its predecessor, but predecessor ${pred.id} is not fully scheduled.`,
+          description: `Task ${codeOf(succ.id)} starts after its predecessor, but predecessor ${codeOf(pred.id)} is not fully scheduled.`,
           severity: "ERROR",
           projectId: succ.projectId,
           taskId: succ.id,
@@ -282,7 +285,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
       conflicts.push({
         type: "ROW_ORDER",
         title: "Pyramid row order violated",
-        description: `Task ${task.id} (row ${task.rowIndex}) is planned to start on ${upperMin}, before lower pyramid rows are finished (last lower-row work on ${lowerMax}).`,
+        description: `Task ${codeOf(task.id)} (row ${task.rowIndex}) is planned to start on ${upperMin}, before lower pyramid rows are finished (last lower-row work on ${lowerMax}).`,
         severity: "ERROR",
         projectId: task.projectId,
         taskId: task.id,
@@ -295,7 +298,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
       conflicts.push({
         type: "ROW_ORDER",
         title: "Pyramid row order violated",
-        description: `Task ${task.id} (row ${task.rowIndex}) is scheduled to start after lower pyramid rows end, but some lower-row tasks are not fully scheduled.`,
+        description: `Task ${codeOf(task.id)} (row ${task.rowIndex}) is scheduled to start after lower pyramid rows end, but some lower-row tasks are not fully scheduled.`,
         severity: "ERROR",
         projectId: task.projectId,
         taskId: task.id,
@@ -313,7 +316,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
         conflicts.push({
           type: "TASK_DEADLINE",
           title: "Task deadline missed",
-          description: `Task ${task.id} is planned to finish on ${last}, after its deadline ${task.taskDeadline}.`,
+          description: `Task ${codeOf(task.id)} is planned to finish on ${last}, after its deadline ${task.taskDeadline}.`,
           severity: "WARNING",
           projectId: task.projectId,
           taskId: task.id,
@@ -325,7 +328,7 @@ export function detectConflicts(input: ConflictInput): ConflictDraft[] {
       conflicts.push({
         type: "TASK_DEADLINE",
         title: "On-hold task deadline risk",
-        description: `Task ${task.id} is on hold with ${task.remainingHours}h remaining; the project deadline may be affected.`,
+        description: `Task ${codeOf(task.id)} is on hold with ${task.remainingHours}h remaining; the project deadline may be affected.`,
         severity: "WARNING",
         projectId: task.projectId,
         taskId: task.id,
