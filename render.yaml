@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: engineering-resource-planner
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: .
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    preDeployCommand: npx prisma migrate deploy --schema apps/server/prisma/schema.prisma
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: ""
+      - key: DATABASE_URL
+        fromDatabase:
+          name: erp-db
+          property: connectionString
+
+databases:
+  - name: erp-db
+    plan: free
+    region: frankfurt
+    databaseName: erp
+    user: erp

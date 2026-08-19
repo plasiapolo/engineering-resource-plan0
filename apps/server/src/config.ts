@@ -31,7 +31,7 @@ function parseList(value: string | undefined): string[] {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const nodeEnv = env.NODE_ENV ?? "development";
   const isProduction = nodeEnv === "production";
-  const webDistPath = path.resolve(__dirname, "../../web/dist");
+  const webDistPath = path.resolve(__dirname, "../../../web/dist");
 
   return {
     nodeEnv,
