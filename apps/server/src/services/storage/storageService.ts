@@ -15,6 +15,8 @@ import type {
   TaskStatus,
 } from "../../domain/types";
 import {
+  addDays,
+  addMonths,
   compareDates,
   isWorkingDay,
   toDate,
@@ -146,6 +148,38 @@ export class StorageService {
       plannedByUser.set(entry.userId, (plannedByUser.get(entry.userId) ?? 0) + entry.hours);
     }
 
+    const availabilityByUser = new Map<string, Map<DateString, number>>();
+    for (const a of availability) {
+      const dateStr = toDateString(a.date);
+      const perUser = availabilityByUser.get(a.userId) ?? new Map<DateString, number>();
+      perUser.set(dateStr, a.availableHours);
+      availabilityByUser.set(a.userId, perUser);
+    }
+
+    const today = warsawToday();
+    const horizon = addMonths(today, 3);
+    const capacityFor = (userId: string): number => {
+      const perUser = availabilityByUser.get(userId);
+      let capacity = 0;
+      let day = today;
+      while (compareDates(day, horizon) <= 0) {
+        if (isWorkingDay(day)) {
+          capacity += perUser?.get(day) ?? DEFAULT_WORKING_HOURS;
+        }
+        day = addDays(day, 1);
+      }
+      return capacity;
+    };
+    const plannedInWindow = (userId: string): number =>
+      planEntries
+        .filter(
+          (e) =>
+            e.userId === userId &&
+            compareDates(toDateString(e.date), today) >= 0 &&
+            compareDates(toDateString(e.date), horizon) <= 0,
+        )
+        .reduce((sum, e) => sum + e.hours, 0);
+
     const team: ApiTeamMember[] = users.map((u) => {
       const planned = plannedByUser.get(u.id) ?? 0;
       const availabilityHours = availability
@@ -160,6 +194,7 @@ export class StorageService {
         totalAvailabilityHours: availabilityHours,
         plannedHours: planned,
         availableHours: Math.max(0, DEFAULT_WORKING_HOURS - planned),
+        availableHoursNext3Months: Math.max(0, capacityFor(u.id) - plannedInWindow(u.id)),
       };
     });
 

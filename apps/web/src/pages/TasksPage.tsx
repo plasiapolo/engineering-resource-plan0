@@ -202,6 +202,7 @@ export function TasksPage() {
       ) : null}
 
       <TaskFormModal
+        key={editing?.id ?? "new"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);

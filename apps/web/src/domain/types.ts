@@ -142,6 +142,7 @@ export interface ApiTeamMember {
   totalAvailabilityHours: number;
   plannedHours: number;
   availableHours: number;
+  availableHoursNext3Months: number;
 }
 
 export interface AppData {

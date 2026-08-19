@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addMonths,
   addWorkingDays,
   isPolishHoliday,
   isWeekend,
@@ -76,6 +77,12 @@ describe("polishCalendar", () => {
 
   it("returns today in Europe/Warsaw as YYYY-MM-DD", () => {
     expect(warsawToday()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("adds months clamping to the last day of the target month", () => {
+    expect(addMonths("2026-08-19", 3)).toBe("2026-11-19");
+    expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
+    expect(addMonths("2026-03-31", 1)).toBe("2026-04-30");
   });
 
   it("never produces invalid holiday dates", () => {

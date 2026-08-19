@@ -28,6 +28,16 @@ export function addDays(dateStr: DateString, days: number): DateString {
   return toDateString(d);
 }
 
+export function addMonths(dateStr: DateString, months: number): DateString {
+  const d = toDate(dateStr);
+  const day = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + months);
+  if (d.getUTCDate() < day) {
+    d.setUTCDate(0);
+  }
+  return toDateString(d);
+}
+
 export function compareDates(a: DateString, b: DateString): number {
   if (a === b) return 0;
   return a < b ? -1 : 1;

@@ -329,12 +329,14 @@ function DroppableCell({
         isToday ? styles.cellToday : ""
       } ${isOver ? styles.cellOver : ""}`}
     >
-      <div className={styles.cellLabel}>
-        <span className={unavailable ? styles.availNone : overloaded ? styles.availOver : styles.availOk}>
-          {availableLabel}
-        </span>
-        {unavailable ? <Badge tone="gray">not available</Badge> : null}
-      </div>
+      {working ? (
+        <div className={styles.cellLabel}>
+          <span className={unavailable ? styles.availNone : overloaded ? styles.availOver : styles.availOk}>
+            {availableLabel}
+          </span>
+          {unavailable ? <Badge tone="gray">not available</Badge> : null}
+        </div>
+      ) : null}
       {children}
     </div>
   );

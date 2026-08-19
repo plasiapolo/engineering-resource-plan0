@@ -195,22 +195,24 @@ function AvailabilityRow({
         const unavailable = hours === 0;
         const isToday = date === today;
         return (
-          <div
-            key={date}
-            className={`${styles.calendarCell} ${working ? styles.calendarCellWorking : styles.calendarCellNonWorking} ${
-              unavailable ? styles.calendarCellUnavailable : ""
-            } ${isToday ? styles.calendarCellToday : ""}`}
-            onClick={() => working && editable && onEdit(date)}
-            style={editable && working ? { cursor: "pointer" } : undefined}
-            title={unavailable ? "Not available" : `${hours}h available`}
-          >
-            <div className={styles.calendarCellLabel}>
-              <span className={unavailable ? styles.availBadgeZero : styles.availBadge}>
-                {unavailable ? "not available" : `${hours}h`}
-              </span>
-              {planned > 0 ? <Badge tone={planned > hours ? "red" : "neutral"}>{planned}h planned</Badge> : null}
-            </div>
+<div
+        key={date}
+        className={`${styles.calendarCell} ${working ? styles.calendarCellWorking : styles.calendarCellNonWorking} ${
+          unavailable ? styles.calendarCellUnavailable : ""
+        } ${isToday ? styles.calendarCellToday : ""}`}
+        onClick={() => working && editable && onEdit(date)}
+        style={editable && working ? { cursor: "pointer" } : undefined}
+        title={working ? (unavailable ? "Not available" : `${hours}h available`) : undefined}
+      >
+        {working ? (
+          <div className={styles.calendarCellLabel}>
+            <span className={unavailable ? styles.availBadgeZero : styles.availBadge}>
+              {unavailable ? "not available" : `${hours}h`}
+            </span>
+            {planned > 0 ? <Badge tone={planned > hours ? "red" : "neutral"}>{planned}h planned</Badge> : null}
           </div>
+        ) : null}
+      </div>
         );
       })}
     </>

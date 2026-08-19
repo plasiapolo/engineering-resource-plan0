@@ -33,7 +33,7 @@ export function TeamPage() {
             },
             { key: "skill", header: "Competence", render: (m) => (m.skill ? <Badge tone="blue">{m.skill}</Badge> : <span className="muted">—</span>) },
             { key: "planned", header: "Planned hours", render: (m) => `${m.plannedHours}h` },
-            { key: "daily", header: "Daily availability", render: (m) => `${m.availableHours}h` },
+            { key: "avail3mo", header: "Available hours (3 months)", render: (m) => `${m.availableHoursNext3Months}h` },
           ]}
         />
       </Card>

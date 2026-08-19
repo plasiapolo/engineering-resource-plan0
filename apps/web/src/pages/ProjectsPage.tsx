@@ -100,6 +100,7 @@ export function ProjectsPage() {
       </Card>
 
       <ProjectFormModal
+        key={editing?.id ?? "new"}
         open={formOpen}
         onClose={() => {
           setFormOpen(false);
