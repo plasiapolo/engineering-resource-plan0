@@ -11,7 +11,8 @@ import type {
   TaskStatus,
 } from "../domain/types";
 
-const BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const BASE =
+  import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? "https://engineering-resource-planner.onrender.com" : "/api");
 
 export class ApiError extends Error {
   statusCode: number;
