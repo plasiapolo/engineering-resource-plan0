@@ -48,7 +48,7 @@ function isAllowedOrigin(origin: string | undefined, allowed: string[]): boolean
     return false;
   }
   if (allowed.includes(origin)) return true;
-  return host === "vercel.app" || host.endsWith(".vercel.app");
+  return host === "vercel.app" || host.endsWith(".vercel.app") || host === "netlify.app" || host.endsWith(".netlify.app");
 }
 
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
