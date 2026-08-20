@@ -5,7 +5,7 @@ services:
     plan: free
     region: frankfurt
     rootDir: .
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: NODE_ENV=production npx prisma migrate deploy --schema apps/server/prisma/schema.prisma && NODE_ENV=production npm start
     healthCheckPath: /health
     autoDeploy: true
