@@ -6,14 +6,12 @@ services:
     region: frankfurt
     rootDir: .
     buildCommand: npm ci && npm run build
-    startCommand: npx prisma migrate deploy --schema apps/server/prisma/schema.prisma && npm start
+    startCommand: NODE_ENV=production npx prisma migrate deploy --schema apps/server/prisma/schema.prisma && NODE_ENV=production npm start
     healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: NODE_ENV
-        value: production
       - key: COOKIE_SECRET
         generateValue: true
       - key: CORS_ORIGINS
