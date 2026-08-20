@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../app";
 import { resetDatabaseToSeed } from "../app";
+import { sessionCookieOptions } from "./sessionCookie";
 
 export function registerAdminRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.post("/admin/reset", async (request, reply) => {
@@ -10,13 +11,7 @@ export function registerAdminRoutes(app: FastifyInstance, ctx: AppContext): void
     await resetDatabaseToSeed(ctx.db);
     const freshPm = await ctx.db.user.findUniqueOrThrow({ where: { login } });
     const token = await ctx.auth.createSessionForUser(freshPm.id);
-    reply.setCookie("erp_session", token, {
-      httpOnly: true,
-      secure: ctx.config.cookieSecure,
-      sameSite: "lax",
-      path: "/",
-      maxAge: ctx.config.sessionTtlHours * 3600,
-    });
+    reply.setCookie("erp_session", token, sessionCookieOptions(request, ctx.config));
     return reply.send({ ok: true });
   });
 

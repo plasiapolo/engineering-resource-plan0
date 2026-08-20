@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { AppContext } from "../app";
+import { sessionCookieOptions } from "./sessionCookie";
 
 export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.post(
@@ -21,13 +22,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
       if (!result) {
         return reply.code(401).send({ error: "Invalid credentials" });
       }
-      reply.setCookie("erp_session", result.token, {
-        httpOnly: true,
-        secure: ctx.config.cookieSecure,
-        sameSite: "lax",
-        path: "/",
-        maxAge: ctx.config.sessionTtlHours * 3600,
-      });
+      reply.setCookie("erp_session", result.token, sessionCookieOptions(request, ctx.config));
       return reply.send({
         user: {
           id: result.user.id,
@@ -42,7 +37,8 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   app.post("/auth/logout", async (request, reply) => {
     await ctx.auth.logout(request.cookies.erp_session);
-    reply.clearCookie("erp_session", { path: "/" });
+    const opts = sessionCookieOptions(request, ctx.config);
+    reply.clearCookie("erp_session", { path: opts.path, secure: opts.secure, sameSite: opts.sameSite });
     return reply.send({ ok: true });
   });
 

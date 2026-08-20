@@ -39,6 +39,18 @@ export interface BuildAppOptions {
   logger?: boolean | object;
 }
 
+function isAllowedOrigin(origin: string | undefined, allowed: string[]): boolean {
+  if (!origin) return true;
+  let host: string;
+  try {
+    host = new URL(origin).host;
+  } catch {
+    return false;
+  }
+  if (allowed.includes(origin)) return true;
+  return host === "vercel.app" || host.endsWith(".vercel.app");
+}
+
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadConfig();
   const db = createPrismaClient(options.databaseUrl ?? config.databaseUrl);
@@ -57,7 +69,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
   await app.register(cookie, { secret: config.cookieSecret });
   await app.register(cors, {
-    origin: config.corsOrigins,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow: boolean) => void) => {
+      callback(null, isAllowedOrigin(origin, config.corsOrigins));
+    },
     credentials: true,
   });
   await app.register(rateLimit, { global: false });
