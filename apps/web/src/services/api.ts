@@ -22,7 +22,7 @@ export class ApiError extends Error {
   }
 }
 
-const TRANSIENT_RETRY_DELAYS_MS = [10000, 20000, 30000];
+const TRANSIENT_RETRY_DELAYS_MS = [5000, 10000];
 
 function isTransientStatus(status: number): boolean {
   return status === 0 || (status >= 500 && status < 600);
