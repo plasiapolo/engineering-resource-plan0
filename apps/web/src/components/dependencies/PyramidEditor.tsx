@@ -41,7 +41,7 @@ function DraggableTask({ task, codePart }: DraggableTaskProps) {
 function displayCodePart(task: ApiTask, rowIndex: number): string {
   const segments = task.codePart.split("-");
   if (segments.length >= 3) {
-    return `${segments[0]}-${segments[1]}-${rowIndex + 1}`;
+    return `${segments[0]}-${task.requiredSkill}X-${rowIndex + 1}`;
   }
   return task.codePart;
 }
