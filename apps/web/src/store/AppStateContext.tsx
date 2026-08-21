@@ -3,6 +3,7 @@ import type {
   AppData,
   DateString,
   PlannerSummary,
+  SkillType,
   TaskStatus,
   ViewKey,
 } from "../domain/types";
@@ -23,6 +24,9 @@ export interface AppStateContextValue {
   login: (login: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  createSpecialist: (input: { displayName: string; skill: SkillType }) => Promise<void>;
+  updateSpecialist: (id: string, input: { displayName: string; skill: SkillType }) => Promise<void>;
+  deleteSpecialist: (id: string) => Promise<void>;
   createProject: (input: { name: string; deadline: DateString; budgetHours: number }) => Promise<void>;
   updateProject: (id: string, input: Partial<{ name: string; deadline: DateString; budgetHours: number }>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
@@ -128,6 +132,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       refresh,
+      createSpecialist: (input) => run(() => api.createSpecialist(input)),
+      updateSpecialist: (id, input) => run(() => api.updateSpecialist(id, input)),
+      deleteSpecialist: (id) => run(() => api.deleteSpecialist(id)),
       createProject: (input) => run(() => api.createProject(input)),
       updateProject: (id, input) => run(() => api.updateProject(id, input)),
       deleteProject: (id) => run(() => api.deleteProject(id)),

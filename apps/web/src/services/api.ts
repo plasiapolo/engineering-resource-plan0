@@ -119,6 +119,14 @@ export const api = {
 
   getAppData: () => request<import("../domain/types").AppData>("/app-data"),
 
+  createSpecialist: (input: { displayName: string; skill: import("../domain/types").SkillType }) =>
+    request<import("../domain/types").ApiUser>("/team", { method: "POST", body: JSON.stringify(input) }),
+
+  updateSpecialist: (id: string, input: { displayName: string; skill: import("../domain/types").SkillType }) =>
+    request<import("../domain/types").ApiUser>(`/team/${id}`, { method: "PUT", body: JSON.stringify(input) }),
+
+  deleteSpecialist: (id: string) => request<{ ok: boolean }>(`/team/${id}`, { method: "DELETE" }),
+
   createProject: (input: { name: string; deadline: DateString; budgetHours: number }) =>
     request<ApiProject>("/projects", { method: "POST", body: JSON.stringify(input) }),
 
