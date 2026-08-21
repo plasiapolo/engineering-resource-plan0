@@ -22,16 +22,40 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+const TRANSIENT_RETRY_DELAYS_MS = [6000, 12000];
+
+function isTransientStatus(status: number): boolean {
+  return status === 0 || (status >= 500 && status < 600);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function request<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  const method = (options.method ?? "GET").toUpperCase();
+  const canRetry = method === "GET" || method === "HEAD";
+  const delays = TRANSIENT_RETRY_DELAYS_MS;
+
+  let response: Response;
+  try {
+    response = await fetch(`${BASE}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+  } catch {
+    if (canRetry && attempt < delays.length) {
+      await delay(delays[attempt]);
+      return request<T>(path, options, attempt + 1);
+    }
+    throw new ApiError("Network error — the server may be starting up. Try again in a moment.", 0);
+  }
+
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
     try {
@@ -40,14 +64,23 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     } catch {
       // ignore parse errors
     }
+    if (canRetry && isTransientStatus(response.status) && attempt < delays.length) {
+      await delay(delays[attempt]);
+      return request<T>(path, options, attempt + 1);
+    }
     throw new ApiError(message, response.status);
   }
+
   if (response.status === 204) {
     return undefined as T;
   }
   try {
     return await safeJson<T>(response);
   } catch {
+    if (canRetry && attempt < delays.length) {
+      await delay(delays[attempt]);
+      return request<T>(path, options, attempt + 1);
+    }
     throw new ApiError(`Invalid response (${response.status}): server returned non-JSON data`, response.status);
   }
 }
