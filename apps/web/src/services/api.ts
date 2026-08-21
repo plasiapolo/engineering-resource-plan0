@@ -35,17 +35,26 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
     try {
-      const body = (await response.json()) as { error?: string };
-      if (body.error) message = body.error;
+      const body = await safeJson<{ error?: string }>(response);
+      if (body?.error) message = body.error;
     } catch {
-      // ignore
+      // ignore parse errors
     }
     throw new ApiError(message, response.status);
   }
   if (response.status === 204) {
     return undefined as T;
   }
-  return (await response.json()) as T;
+  try {
+    return await safeJson<T>(response);
+  } catch {
+    throw new ApiError(`Invalid response (${response.status}): server returned non-JSON data`, response.status);
+  }
+}
+
+async function safeJson<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  return JSON.parse(text) as T;
 }
 
 export interface LoginResponse {
