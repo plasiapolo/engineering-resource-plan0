@@ -22,10 +22,16 @@ export class ApiError extends Error {
   }
 }
 
-const TRANSIENT_RETRY_DELAYS_MS = [5000, 10000];
+// Covers cold-start wake-up windows on free hosts (Render sleeps after ~15 min idle).
+const TRANSIENT_RETRY_DELAYS_MS = [3000, 5000, 8000, 12000, 20000];
 
 function isTransientStatus(status: number): boolean {
   return status === 0 || (status >= 500 && status < 600);
+}
+
+function looksLikeWakePage(response: Response): boolean {
+  const ct = response.headers.get("content-type") ?? "";
+  return !ct.includes("application/json");
 }
 
 function delay(ms: number): Promise<void> {
@@ -77,9 +83,17 @@ async function request<T>(path: string, options: RequestInit = {}, attempt = 0):
   try {
     return await safeJson<T>(response);
   } catch {
+    // A 2xx with non-JSON body is almost always the cold-start wake-up HTML page.
+    // Retry quietly so the app recovers on its own once the server is ready.
     if (canRetry && attempt < delays.length) {
       await delay(delays[attempt]);
       return request<T>(path, options, attempt + 1);
+    }
+    if (looksLikeWakePage(response)) {
+      throw new ApiError(
+        "The server is still warming up. Please wait a few seconds and refresh the page.",
+        response.status,
+      );
     }
     throw new ApiError(`Invalid response (${response.status}): server returned non-JSON data`, response.status);
   }
