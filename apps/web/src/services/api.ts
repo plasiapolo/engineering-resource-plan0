@@ -12,7 +12,8 @@ import type {
 } from "../domain/types";
 
 const BASE =
-  import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? "https://engineering-resource-planner.onrender.com" : "/api");
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD ? "https://engineering-resource-planner.onrender.com/api" : "/api");
 
 export class ApiError extends Error {
   statusCode: number;
