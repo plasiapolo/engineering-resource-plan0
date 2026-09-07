@@ -146,7 +146,21 @@ export function TasksPage() {
             {
               key: "status",
               header: "Status",
-              render: (t) => <Badge tone={statusTone(t.status)}>{TASK_STATUS_LABELS[t.status]}</Badge>,
+              render: (t) =>
+                t.assignedUsers.length > 0 ? (
+                  <div className="flex wrap">
+                    {t.assignedUsers.map((u) => {
+                      const status = t.statusByUser[u.id] ?? t.status;
+                      return (
+                        <Badge key={u.id} tone={statusTone(status)}>
+                          {u.login}: {TASK_STATUS_LABELS[status]}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Badge tone={statusTone(t.status)}>{TASK_STATUS_LABELS[t.status]}</Badge>
+                ),
             },
             {
               key: "actions",

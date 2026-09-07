@@ -33,12 +33,14 @@ export function Topbar() {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { user } = useAppState();
+  const isPM = user?.role === "PROJECT_MANAGER";
   return (
     <div className={styles.shell}>
       <Sidebar />
       <div className={styles.main}>
         <Topbar />
-        <ConflictBanner />
+        {isPM ? <ConflictBanner /> : null}
         <main className={styles.content}>{children}</main>
       </div>
     </div>

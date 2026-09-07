@@ -14,6 +14,7 @@ import styles from "./pages.module.css";
 export function MyTasksPage() {
   const { user, data, updateTaskStatus } = useAppState();
   const [transitioning, setTransitioning] = useState<{ taskId: string; code: string; to: TaskStatus; workedHours: string } | null>(null);
+  const [editingWorked, setEditingWorked] = useState<{ taskId: string; code: string; workedHours: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (!user || !data) return null;
@@ -34,6 +35,21 @@ export function MyTasksPage() {
         Number.isFinite(worked) && worked >= 0 ? worked : undefined,
       );
       setTransitioning(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmWorked = async () => {
+    if (!editingWorked) return;
+    const worked = Number(editingWorked.workedHours);
+    if (!Number.isFinite(worked) || worked < 0) return;
+    setBusy(true);
+    try {
+      const task = data.tasks.find((t) => t.id === editingWorked.taskId);
+      if (!task) return;
+      await updateTaskStatus(task.id, task.status, worked);
+      setEditingWorked(null);
     } finally {
       setBusy(false);
     }
@@ -60,7 +76,18 @@ export function MyTasksPage() {
             {
               key: "worked",
               header: "Worked",
-              render: (t) => `${t.actualWorkedHours}h`,
+              render: (t) => (
+                <span className="flex" style={{ alignItems: "center", gap: 6 }}>
+                  {t.actualWorkedHours}h
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditingWorked({ taskId: t.id, code: t.codePart, workedHours: String(t.actualWorkedHours) })}
+                  >
+                    Edit
+                  </Button>
+                </span>
+              ),
             },
             { key: "status", header: "Status", render: (t) => <Badge tone={statusTone(t.status)}>{TASK_STATUS_LABELS[t.status]}</Badge> },
             {
@@ -84,6 +111,32 @@ export function MyTasksPage() {
           ]}
         />
       </Card>
+
+      <Modal open={editingWorked !== null} onClose={() => setEditingWorked(null)} title="Edit hours worked">
+        {editingWorked ? (
+          <div>
+            <p>
+              Task <strong className="mono">{editingWorked.code}</strong>
+            </p>
+            <Field label="Hours worked so far" hint="This reduces the planable remaining hours.">
+              <Input
+                type="number"
+                min={0}
+                value={editingWorked.workedHours}
+                onChange={(e) => setEditingWorked({ ...editingWorked, workedHours: e.target.value })}
+              />
+            </Field>
+            <div className="mt-16 flex">
+              <Button onClick={() => void confirmWorked()} disabled={busy}>
+                {busy ? "Saving…" : "Save hours"}
+              </Button>
+              <Button variant="ghost" onClick={() => setEditingWorked(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
 
       <Modal open={transitioning !== null} onClose={() => setTransitioning(null)} title="Update task status">
         {transitioning ? (

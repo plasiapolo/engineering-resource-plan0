@@ -29,7 +29,7 @@ const COLUMN_ORDER: Array<{ key: ColumnKey; title: string; status: TaskStatus }>
   { key: "done", title: "Done", status: "DONE" },
 ];
 
-function KanbanCard({ task, code, hours, draggable }: { task: ApiTask; code: string; hours: number; draggable: boolean }) {
+function KanbanCard({ task, code, hours, draggable, highlighted }: { task: ApiTask; code: string; hours: number; draggable: boolean; highlighted: boolean }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `${task.id}|${code}`,
     disabled: !draggable,
@@ -39,7 +39,9 @@ function KanbanCard({ task, code, hours, draggable }: { task: ApiTask; code: str
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`${styles.kanbanCard} ${isDragging ? styles.kanbanCardDragging : ""} ${draggable ? "" : styles.kanbanCardReadonly}`}
+      className={`${styles.kanbanCard} ${isDragging ? styles.kanbanCardDragging : ""} ${draggable ? "" : styles.kanbanCardReadonly} ${
+        highlighted ? styles.kanbanCardOwn : ""
+      }`}
     >
       <div className={styles.kanbanCardCode}>
         <span className={styles.kanbanCardCodeLine}>{code}</span>
@@ -57,11 +59,13 @@ function KanbanColumn({
   column,
   cards,
   draggableFor,
+  highlightFor,
   onOpen,
 }: {
   column: (typeof COLUMN_ORDER)[number];
   cards: Array<{ task: ApiTask; code: string; hours: number }>;
   draggableFor: (code: string) => boolean;
+  highlightFor: (code: string) => boolean;
   onOpen: (task: ApiTask) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.key });
@@ -75,7 +79,7 @@ function KanbanColumn({
         {cards.length === 0 ? <p className={styles.kanbanEmpty}>Drop tasks here</p> : null}
         {cards.map(({ task, code, hours }) => (
           <div key={`${task.id}|${code}`} onClick={() => onOpen(task)}>
-            <KanbanCard task={task} code={code} hours={hours} draggable={draggableFor(code)} />
+            <KanbanCard task={task} code={code} hours={hours} draggable={draggableFor(code)} highlighted={highlightFor(code)} />
           </div>
         ))}
       </div>
@@ -125,6 +129,13 @@ export function KanbanPage() {
     return segments.length >= 3 && segments[1] === myCode;
   };
 
+  const highlightFor = (code: string) => {
+    if (isPM) return false;
+    const myCode = user!.login.toUpperCase();
+    const segments = code.split("-");
+    return segments.length >= 3 && segments[1] === myCode;
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const [taskId, code] = String(event.active.id).split("|");
     setActiveCode(code);
@@ -137,6 +148,7 @@ export function KanbanPage() {
     const over = event.over;
     if (!over) return;
     const [taskId, code] = String(event.active.id).split("|");
+    if (!draggableFor(code)) return;
     const targetColumn = COLUMN_ORDER.find((c) => c.key === String(over.id));
     if (!targetColumn) return;
     const task = data.tasks.find((t) => t.id === taskId);
@@ -186,6 +198,7 @@ export function KanbanPage() {
                       column={column}
                       cards={projectCards.filter((c) => c.status === column.status)}
                       draggableFor={draggableFor}
+                      highlightFor={highlightFor}
                       onOpen={() => undefined}
                     />
                   ))}

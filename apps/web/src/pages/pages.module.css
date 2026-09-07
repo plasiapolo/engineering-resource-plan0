@@ -379,6 +379,11 @@
   cursor: default;
 }
 
+.kanbanCardOwn {
+  background: #fde9d0;
+  border-color: var(--color-accent);
+}
+
 .kanbanCardCode {
   font-family: var(--font-mono);
   font-weight: 600;
