@@ -464,10 +464,22 @@ export class StorageService {
       throw new Error("A specialist may only update their own worked hours on an assigned task.");
     }
 
+    // Moving from 0 worked hours to a positive value starts the task (moves the
+    // Kanban box from "To do" to "Work in progress").
+    const existing = await this.db.taskUserStatus.findUnique({
+      where: { taskId_userId: { taskId, userId: targetUserId } },
+    });
+    const prevWorked = existing?.actualWorkedHours ?? 0;
+    const prevStatus = existing?.status ?? "NOT_STARTED";
+    let nextStatus = existing?.status;
+    if (hours > 0 && prevWorked === 0 && prevStatus === "NOT_STARTED") {
+      nextStatus = "WORK_IN_PROGRESS";
+    }
+
     await this.db.taskUserStatus.upsert({
       where: { taskId_userId: { taskId, userId: targetUserId } },
-      create: { taskId, userId: targetUserId, status: "NOT_STARTED", actualWorkedHours: hours },
-      update: { actualWorkedHours: hours },
+      create: { taskId, userId: targetUserId, status: nextStatus ?? "NOT_STARTED", actualWorkedHours: hours },
+      update: { actualWorkedHours: hours, ...(nextStatus ? { status: nextStatus } : {}) },
     });
 
     // Keep the task-level aggregate in sync with the sum of per-specialist hours.
