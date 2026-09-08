@@ -444,6 +444,43 @@ export class StorageService {
     return this.loadTask(taskId);
   }
 
+  async updateTaskUserWorkedHours(
+    taskId: string,
+    targetUserId: string,
+    hours: number,
+    actorId: string,
+    actorRole: Role,
+  ): Promise<ApiTask> {
+    if (!Number.isInteger(hours) || hours < 0) {
+      throw new Error("Hours worked must be a non-negative whole number.");
+    }
+    const task = await this.db.task.findUniqueOrThrow({
+      where: { id: taskId },
+      include: { project: true, planEntries: { where: { deletedAt: null }, include: { user: true } }, taskUserStatuses: true },
+    });
+
+    const isAssigned = task.planEntries.some((e) => e.userId === targetUserId);
+    if (actorRole !== "PROJECT_MANAGER" && (actorId !== targetUserId || !isAssigned)) {
+      throw new Error("A specialist may only update their own worked hours on an assigned task.");
+    }
+
+    await this.db.taskUserStatus.upsert({
+      where: { taskId_userId: { taskId, userId: targetUserId } },
+      create: { taskId, userId: targetUserId, status: "NOT_STARTED", actualWorkedHours: hours },
+      update: { actualWorkedHours: hours },
+    });
+
+    // Keep the task-level aggregate in sync with the sum of per-specialist hours.
+    const statuses = await this.db.taskUserStatus.findMany({ where: { taskId } });
+    const totalWorked = statuses.reduce((sum, s) => sum + s.actualWorkedHours, 0);
+    await this.db.task.update({
+      where: { id: taskId },
+      data: { actualWorkedHours: totalWorked },
+    });
+
+    return this.loadTask(taskId);
+  }
+
   private async loadTask(taskId: string): Promise<ApiTask> {
     const task = await this.db.task.findUniqueOrThrow({
       where: { id: taskId },

@@ -1,0 +1,1 @@
+ALTER TABLE "TaskUserStatus" ADD COLUMN "actualWorkedHours" INTEGER NOT NULL DEFAULT 0;

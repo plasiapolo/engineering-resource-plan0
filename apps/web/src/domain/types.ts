@@ -56,6 +56,7 @@ export interface ApiTask {
   taskDeadline: DateString | null;
   rowIndex: number;
   statusByUser: Record<string, TaskStatus>;
+  workedByUser: Record<string, number>;
   assignedUserIds: string[];
   assignedUsers: Array<{ id: string; displayName: string; login: string; skill: SkillType }>;
   scheduledHours: number;

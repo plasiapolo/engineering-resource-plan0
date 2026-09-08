@@ -31,6 +31,11 @@ const userStatusSchema = z.object({
   status: z.enum(["NOT_STARTED", "WORK_IN_PROGRESS", "DONE", "ON_HOLD"]),
 });
 
+const userWorkedSchema = z.object({
+  userId: z.string().min(1),
+  hours: z.number().int().min(0),
+});
+
 const assignmentSchema = z.object({
   assignments: z
     .array(
@@ -142,8 +147,29 @@ export function registerTaskRoutes(app: FastifyInstance, ctx: AppContext): void 
     try {
       const entries = await ctx.storage.assignTask(id, parsed.data.assignments, pm.id);
       return reply.code(201).send(entries);
+} catch (err) {
+      return reply.code(400).send({ error: err instanceof Error ? err.message : "Invalid status change" });
+    }
+  });
+
+  app.put("/tasks/:id/worked/user", async (request, reply) => {
+    const user = request.requireUser();
+    const { id } = request.params as { id: string };
+    const parsed = userWorkedSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? "Invalid body" });
+    }
+    try {
+      const task = await ctx.storage.updateTaskUserWorkedHours(
+        id,
+        parsed.data.userId,
+        parsed.data.hours,
+        user.id,
+        user.role,
+      );
+      return reply.send(task);
     } catch (err) {
-      return reply.code(400).send({ error: err instanceof Error ? err.message : "Invalid assignment" });
+      return reply.code(400).send({ error: err instanceof Error ? err.message : "Invalid worked hours change" });
     }
   });
 

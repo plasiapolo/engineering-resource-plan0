@@ -112,14 +112,15 @@ model Task {
 }
 
 model TaskUserStatus {
-  id        String     @id @default(cuid())
-  taskId    String
-  task      Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status    TaskStatus @default(NOT_STARTED)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  taskId           String
+  task             Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status           TaskStatus @default(NOT_STARTED)
+  actualWorkedHours Int       @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@unique([taskId, userId])
   @@index([taskId])

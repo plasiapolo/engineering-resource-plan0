@@ -12,7 +12,7 @@ import type { TaskStatus } from "../domain/types";
 import styles from "./pages.module.css";
 
 export function MyTasksPage() {
-  const { user, data, updateTaskStatus } = useAppState();
+  const { user, data, updateTaskStatus, updateTaskUserWorkedHours } = useAppState();
   const [transitioning, setTransitioning] = useState<{ taskId: string; code: string; to: TaskStatus; workedHours: string } | null>(null);
   const [editingWorked, setEditingWorked] = useState<{ taskId: string; code: string; workedHours: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -20,6 +20,11 @@ export function MyTasksPage() {
   if (!user || !data) return null;
 
   const myTasks = data.tasks.filter((t) => t.assignedUserIds.includes(user.id));
+
+  const assignedHoursOf = (taskId: string): number =>
+    data.planEntries
+      .filter((e) => e.taskId === taskId && e.userId === user.id)
+      .reduce((sum, e) => sum + e.hours, 0);
 
   const statusTone = (status: string) =>
     status === "DONE" ? "green" : status === "ON_HOLD" ? "orange" : status === "WORK_IN_PROGRESS" ? "blue" : "neutral";
@@ -46,9 +51,7 @@ export function MyTasksPage() {
     if (!Number.isFinite(worked) || worked < 0) return;
     setBusy(true);
     try {
-      const task = data.tasks.find((t) => t.id === editingWorked.taskId);
-      if (!task) return;
-      await updateTaskStatus(task.id, task.status, worked);
+      await updateTaskUserWorkedHours(editingWorked.taskId, user.id, worked);
       setEditingWorked(null);
     } finally {
       setBusy(false);
@@ -72,17 +75,18 @@ export function MyTasksPage() {
             { key: "skill", header: "Skill", render: (t) => <Badge tone="blue">{t.requiredSkill}</Badge> },
             { key: "hoursEstimated", header: "Hours estimated", render: (t) => `${t.estimatedHours}h` },
             { key: "hoursPlanned", header: "Hours planned", render: (t) => `${t.scheduledHours}h` },
+            { key: "hoursAssigned", header: "Hours assigned", render: (t) => `${assignedHoursOf(t.id)}h` },
             { key: "hoursAvailable", header: "Hours available", render: (t) => `${Math.max(0, t.estimatedHours - t.scheduledHours)}h` },
             {
               key: "worked",
               header: "Worked",
               render: (t) => (
                 <span className="flex" style={{ alignItems: "center", gap: 6 }}>
-                  {t.actualWorkedHours}h
+                  {t.workedByUser[user.id] ?? t.actualWorkedHours}h
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => setEditingWorked({ taskId: t.id, code: t.codePart, workedHours: String(t.actualWorkedHours) })}
+                    onClick={() => setEditingWorked({ taskId: t.id, code: t.codePart, workedHours: String(t.workedByUser[user.id] ?? t.actualWorkedHours) })}
                   >
                     Edit
                   </Button>
