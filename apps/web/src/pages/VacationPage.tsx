@@ -13,12 +13,14 @@ export function VacationPage() {
   if (!data) return null;
 
   const today = warsawToday();
+  const year = today.slice(0, 4);
   const specialists = data.team.filter((m) => m.role === "SPECIALIST");
 
   const notAvailableHours = (userId: string, upToToday: boolean): number => {
     let total = 0;
     for (const a of data.availability) {
       if (a.userId !== userId) continue;
+      if (!a.date.startsWith(`${year}-`)) continue;
       if (a.availableHours >= FULL_DAY_HOURS) continue;
       if (!isWorkingDay(parseDateString(a.date))) continue;
       if (upToToday ? a.date > today : a.date <= today) continue;
@@ -48,10 +50,10 @@ export function VacationPage() {
             { key: "name", header: "Specialist", render: (m) => <strong>{m.displayName}</strong> },
             { key: "login", header: "Login", render: (m) => <span className="mono">{m.login}</span> },
             { key: "skill", header: "Skill", render: (m) => <Badge tone="blue">{m.skill ?? "—"}</Badge> },
-            { key: "vacAvail", header: "Vacation hours available", render: (m) => `${vacationOf(m.id).available}h` },
-            { key: "vacUsed", header: "Vacation hours used", render: (m) => `${vacationOf(m.id).used}h` },
-            { key: "vacPlanned", header: "Vacation hours planned", render: (m) => `${vacationOf(m.id).planned}h` },
-            { key: "vacToBePlanned", header: "Vacation hours to be planned", render: (m) => `${vacationOf(m.id).toBePlanned}h` },
+            { key: "vacAvail", header: `Vacation hours available (${year})`, render: (m) => `${vacationOf(m.id).available}h` },
+            { key: "vacUsed", header: `Vacation hours used (${year})`, render: (m) => `${vacationOf(m.id).used}h` },
+            { key: "vacPlanned", header: `Vacation hours planned (${year})`, render: (m) => `${vacationOf(m.id).planned}h` },
+            { key: "vacToBePlanned", header: `Vacation hours to be planned (${year})`, render: (m) => `${vacationOf(m.id).toBePlanned}h` },
           ]}
         />
       </Card>
