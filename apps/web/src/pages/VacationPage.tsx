@@ -30,7 +30,7 @@ export function VacationPage() {
   const vacationOf = (userId: string) => {
     const used = notAvailableHours(userId, true);
     const planned = notAvailableHours(userId, false);
-    const toBePlanned = Math.max(0, VACATION_HOURS - used);
+    const toBePlanned = Math.max(0, VACATION_HOURS - used - planned);
     return { available: VACATION_HOURS, used, planned, toBePlanned };
   };
 
