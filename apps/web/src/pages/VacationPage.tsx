@@ -15,18 +15,23 @@ export function VacationPage() {
   const today = warsawToday();
   const specialists = data.team.filter((m) => m.role === "SPECIALIST");
 
-  const vacationOf = (userId: string) => {
-    let notAvailable = 0;
+  const notAvailableHours = (userId: string, upToToday: boolean): number => {
+    let total = 0;
     for (const a of data.availability) {
       if (a.userId !== userId) continue;
-      if (a.date > today) continue;
       if (a.availableHours >= FULL_DAY_HOURS) continue;
       if (!isWorkingDay(parseDateString(a.date))) continue;
-      notAvailable += FULL_DAY_HOURS - a.availableHours;
+      if (upToToday ? a.date > today : a.date <= today) continue;
+      total += FULL_DAY_HOURS - a.availableHours;
     }
-    const used = Math.max(0, VACATION_HOURS - notAvailable);
-    const planned = VACATION_HOURS - used;
-    return { available: VACATION_HOURS, planned, used };
+    return total;
+  };
+
+  const vacationOf = (userId: string) => {
+    const used = notAvailableHours(userId, true);
+    const planned = notAvailableHours(userId, false);
+    const toBePlanned = Math.max(0, VACATION_HOURS - used);
+    return { available: VACATION_HOURS, used, planned, toBePlanned };
   };
 
   return (
@@ -44,8 +49,9 @@ export function VacationPage() {
             { key: "login", header: "Login", render: (m) => <span className="mono">{m.login}</span> },
             { key: "skill", header: "Skill", render: (m) => <Badge tone="blue">{m.skill ?? "—"}</Badge> },
             { key: "vacAvail", header: "Vacation hours available", render: (m) => `${vacationOf(m.id).available}h` },
-            { key: "vacPlanned", header: "Vacation hours planned", render: (m) => `${vacationOf(m.id).planned}h` },
             { key: "vacUsed", header: "Vacation hours used", render: (m) => `${vacationOf(m.id).used}h` },
+            { key: "vacPlanned", header: "Vacation hours planned", render: (m) => `${vacationOf(m.id).planned}h` },
+            { key: "vacToBePlanned", header: "Vacation hours to be planned", render: (m) => `${vacationOf(m.id).toBePlanned}h` },
           ]}
         />
       </Card>
