@@ -79,6 +79,11 @@ export function calendarWindow(): { start: DateString; end: DateString } {
   return { start: toDateString(start), end: toDateString(end) };
 }
 
+export function calendarYearRange(): { min: DateString; max: DateString } {
+  const year = Number(warsawToday().slice(0, 4));
+  return { min: `${year - 1}-01-01`, max: `${year + 3}-12-31` };
+}
+
 export function dayOfWeek(date: Date): number {
   return date.getDay();
 }

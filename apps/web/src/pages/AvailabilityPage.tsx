@@ -3,10 +3,10 @@ import { useAppState } from "../store/AppStateContext";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
-import { Input, Field } from "../components/ui/Input";
+import { Input, Field, Select } from "../components/ui/Input";
 import { Alert } from "../components/ui/Alert";
 import { Badge } from "../components/ui/Badge";
-import { addDays, isWorkingDay, parseDateString, startOfWeek, toDateString, weekDates, warsawToday } from "../utils/date";
+import { addDays, calendarYearRange, isWorkingDay, parseDateString, startOfWeek, toDateString, weekDates, warsawToday } from "../utils/date";
 import { DEFAULT_WORKING_HOURS } from "../domain/constants";
 import styles from "./pages.module.css";
 
@@ -35,6 +35,9 @@ export function AvailabilityPage() {
   const weekStart = startOfWeek(parseDateString(selectedWeekStart));
   const days = weekDates(weekStart);
   const today = warsawToday();
+  const { min, max } = calendarYearRange();
+  const currentYear = Number(today.slice(0, 4));
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2, currentYear + 3];
   const canEdit = (userId: string) => (user?.role === "PROJECT_MANAGER" ? true : user?.id === userId);
 
   const hoursFor = (userId: string, date: string): number => {
@@ -71,9 +74,18 @@ export function AvailabilityPage() {
     }
   };
 
-  const prevWeek = () => setSelectedWeekStart(toDateString(addDays(weekStart, -7)));
-  const nextWeek = () => setSelectedWeekStart(toDateString(addDays(weekStart, 7)));
+  const prevWeek = () => {
+    const next = toDateString(addDays(weekStart, -7));
+    if (next < min) return;
+    setSelectedWeekStart(next);
+  };
+  const nextWeek = () => {
+    const next = toDateString(addDays(weekStart, 7));
+    if (next > max) return;
+    setSelectedWeekStart(next);
+  };
   const thisWeek = () => setSelectedWeekStart(today);
+  const jumpToYear = (year: string) => setSelectedWeekStart(`${year}-01-01`);
 
   return (
     <div>
@@ -91,6 +103,13 @@ export function AvailabilityPage() {
         <Button variant="ghost" size="sm" onClick={thisWeek}>
           This week
         </Button>
+        <Select style={{ width: 80 }} value={String(weekStart.getFullYear())} onChange={(e) => jumpToYear(e.target.value)}>
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </Select>
         <span className="muted" style={{ fontSize: 12 }}>
           {user?.role === "PROJECT_MANAGER" ? "Click a day to set availability for a specialist." : "Click a day to set your availability."}
         </span>

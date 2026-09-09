@@ -14,11 +14,11 @@ import {
 import type { ApiPlanEntry, DateString } from "../../domain/types";
 import { DEFAULT_WORKING_HOURS } from "../../domain/constants";
 import { Badge } from "../ui/Badge";
-import { addDays, isWorkingDay, parseDateString, startOfWeek, toDateString, weekDates, warsawToday } from "../../utils/date";
+import { addDays, calendarYearRange, isWorkingDay, parseDateString, startOfWeek, toDateString, weekDates, warsawToday } from "../../utils/date";
 import { useAppState } from "../../store/AppStateContext";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
-import { Input, Field } from "../ui/Input";
+import { Input, Field, Select } from "../ui/Input";
 import { Alert } from "../ui/Alert";
 import styles from "./planner.module.css";
 
@@ -60,6 +60,9 @@ export function WeeklyCalendar({ isPM }: { isPM: boolean }) {
   const weekStart = startOfWeek(parseDateString(selectedWeekStart));
   const days = weekDates(weekStart);
   const today = warsawToday();
+  const { min, max } = calendarYearRange();
+  const currentYear = Number(today.slice(0, 4));
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2, currentYear + 3];
 
   const hoursFor = (userId: string, date: DateString): number => {
     const record = availability.find((a) => a.userId === userId && a.date === date);
@@ -123,9 +126,18 @@ export function WeeklyCalendar({ isPM }: { isPM: boolean }) {
     setError(null);
   };
 
-  const prevWeek = () => setSelectedWeekStart(toDateString(addDays(weekStart, -7)));
-  const nextWeek = () => setSelectedWeekStart(toDateString(addDays(weekStart, 7)));
+  const prevWeek = () => {
+    const next = toDateString(addDays(weekStart, -7));
+    if (next < min) return;
+    setSelectedWeekStart(next);
+  };
+  const nextWeek = () => {
+    const next = toDateString(addDays(weekStart, 7));
+    if (next > max) return;
+    setSelectedWeekStart(next);
+  };
   const thisWeek = () => setSelectedWeekStart(today);
+  const jumpToYear = (year: string) => setSelectedWeekStart(`${year}-01-01`);
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActive(null)}>
@@ -144,6 +156,13 @@ export function WeeklyCalendar({ isPM }: { isPM: boolean }) {
           <Button variant="ghost" size="sm" onClick={thisWeek}>
             This week
           </Button>
+          <Select style={{ width: 80 }} value={String(weekStart.getFullYear())} onChange={(e) => jumpToYear(e.target.value)}>
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </Select>
           <span className="muted" style={{ fontSize: 12 }}>
             {isPM
               ? "Drag tasks between specialists with the same competence. Locked entries (orange edge) are manual; auto entries (blue edge) are generated."
