@@ -9,6 +9,7 @@ import { DependenciesPage } from "./pages/DependenciesPage";
 import { TeamPage } from "./pages/TeamPage";
 import { PlannerPage } from "./pages/PlannerPage";
 import { AvailabilityPage } from "./pages/AvailabilityPage";
+import { VacationPage } from "./pages/VacationPage";
 import { KanbanPage } from "./pages/KanbanPage";
 import { GanttPage } from "./pages/GanttPage";
 import { WorkloadPage } from "./pages/WorkloadPage";
@@ -25,6 +26,7 @@ const PM_PAGES = {
   team: TeamPage,
   planner: PlannerPage,
   availability: AvailabilityPage,
+  vacation: VacationPage,
   kanban: KanbanPage,
   gantt: GanttPage,
   workload: WorkloadPage,
@@ -38,6 +40,7 @@ const SPECIALIST_PAGES = {
   team: TeamPage,
   planner: PlannerPage,
   availability: AvailabilityPage,
+  vacation: VacationPage,
   kanban: KanbanPage,
   gantt: GanttPage,
   workload: WorkloadPage,

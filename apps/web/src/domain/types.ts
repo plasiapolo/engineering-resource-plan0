@@ -176,6 +176,7 @@ export type ViewKey =
   | "team"
   | "planner"
   | "availability"
+  | "vacation"
   | "kanban"
   | "gantt"
   | "workload"
